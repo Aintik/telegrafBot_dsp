@@ -1,7 +1,7 @@
-const {Telegraf} = require("telegraf")
+const { Telegraf, Markup } = require("telegraf");
 require("dotenv").config();
 const mongoose = require("mongoose")
-const Order = require("./models/order")
+const Order = require("./models/order");
 const { URL, bot_token } = process.env;
 const PORT = process.env.PORT || 5000;
 const bot = new Telegraf(bot_token);
@@ -10,58 +10,114 @@ mongoose
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("❌ MongoDB error:", err));
 
-//bot.use(async (ctx, next) => {
-//  ctx.state.isSent = true;
-//  await next(ctx)
-//});
+
+
 bot.catch((err, ctx) => {
   console.log('err occured', err);
 })
 
-// is user in Order State?
-const userStates = new Map();
 
-
+// Главное меню
 bot.start((ctx) => {
-  userStates.delete(ctx.from.id); // Reset state
   ctx.reply(
-    '👋 Добро пожаловать в "DSP Optom"! Мы продаём ДСП оптом. Напиши /catalog чтобы посмотреть товары.'
-  );
-});
-bot.help(ctx => {
-  userStates.delete(ctx.from.id); // Reset state
-  ctx.reply("Это бот для просмотра дсп и покупки");
-});
-bot.command("catalog", (ctx) => {
-  userStates.delete(ctx.from.id); // Reset state
-  ctx.reply(
-    "📦 Каталог:\n1. ДСП 16 мм — 250 листов в наличии\n2. ДСП 18 мм — 300 листов\n\nДля заказа напишите: /order"
-  );
-});
-bot.command("order", (ctx) => {
-  userStates.set(ctx.from.id, "awaiting_order");
-  ctx.reply(
-    "📝 Отправьте, пожалуйста, ваш номер телефона и желаемое количество листов."
+    '👋 Добро пожаловать в *DSP Optom*! Выберите действие:',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback('📦 Каталог', 'catalog')],
+        [Markup.button.callback('📞 Контакты', 'contacts')],
+        [Markup.button.callback('📝 Сделать заказ', 'order')]
+      ])
+    }
   );
 });
 
-bot.on("text", (ctx) => {
-  const userId = ctx.from.id;
-  const username = ctx.from.username
-   if (userStates.get(userId) === "awaiting_order") {
-     userStates.delete(userId);
-     ctx.reply(
-       "✅ Спасибо за заказ! Мы скоро с вами свяжемся для подтверждения."
-     );
-     console.log(
-       `New order from user ${(userId, username)}: ${ctx.message.text}`
-     );
-   } else {
-     ctx.reply(
-       "Для просмотра товаров напишите /catalog\nДля оформления заказа напишите /order"
-     );
-   }
+// Каталог
+bot.action('catalog', (ctx) => {
+  ctx.reply(
+    '📦 Каталог:\n\n1️⃣ ДСП 16 мм — 250 листов\n2️⃣ ДСП 18 мм — 300 листов\n\nВыберите категорию:',
+    Markup.inlineKeyboard([
+      [Markup.button.callback('16 мм', 'cat_16')],
+      [Markup.button.callback('18 мм', 'cat_18')],
+      [Markup.button.callback('⬅️ Назад', 'back_home')]
+    ])
+  );
 });
+
+bot.action('cat_16', (ctx) => ctx.reply('Вы выбрали ДСП 16 мм.'));
+bot.action('cat_18', (ctx) => ctx.reply('Вы выбрали ДСП 18 мм.'));
+bot.action('back_home', (ctx) => ctx.reply('Возврат в главное меню. Напишите /start.'));
+
+// Контакты
+bot.action('contacts', (ctx) => {
+  ctx.reply('📞 Контакты:\n\nТелефон: +998 90 123 45 67\nАдрес: Ташкент, ул. Промышленная 12');
+});
+
+// Заказ
+let orderData = {};
+
+bot.action('order', (ctx) => {
+  ctx.reply('Введите ваш номер телефона:');
+  orderData[ctx.chat.id] = { step: 'phone' };
+});
+
+
+// 🧠 Команда /orders для администратора
+bot.command("orders", async (ctx) => {
+  const admins = process.env.ADMINS.split(",").map((i) => i.trim());
+  if (!(admins.find((i) => {
+    return i == ctx.from.id;
+  }))) {
+    return ctx.reply("🚫 У вас нет доступа к этой команде.");
+  }
+
+  const orders = await Order.find().sort({ createdAt: -1 }).limit(10);
+
+  if (!orders.length) {
+    return ctx.reply("Пока нет заказов.");
+  }
+
+  let message = "📋 *Последние заказы:*\n\n";
+  orders.forEach((o, i) => {
+    message += `#${i + 1}\n👤 @${o.username || "—"}\n📞 ${o.phone}\n📦 ${o.quantity} листов (${o.category})\n🕒 ${o.createdAt.toLocaleString()}\n\n`;
+  });
+
+  ctx.reply(message);
+});
+
+
+
+
+bot.on('text', async (ctx) => {
+  const user = orderData[ctx.chat.id];
+  if (!user) return;
+
+  if (user.step === 'phone') {
+    user.phone = ctx.message.text;
+    user.step = 'quantity';
+    ctx.reply('Введите количество листов:');
+  } else if (user.step === 'quantity') {
+    user.quantity = ctx.message.text;
+    user.step = 'category';
+    ctx.reply('Укажите категорию (например: 16 мм или 18 мм):');
+  } else if (user.step === 'category') {
+    user.category = ctx.message.text;
+    
+
+    const newOrder = new Order({
+      username: ctx.from.username,
+      phone: user.phone,
+      quantity: user.quantity,
+      category: user.category
+    });
+    await newOrder.save();
+
+    ctx.reply('✅ Заказ успешно сохранён! Мы скоро свяжемся с вами.');
+
+    delete orderData[ctx.chat.id];
+  }
+});
+
 
 
 
