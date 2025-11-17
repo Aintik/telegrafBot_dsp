@@ -21,7 +21,7 @@ bot.catch((err, ctx) => {
 // Главное меню
 bot.start((ctx) => {
   ctx.reply(
-    '👋 Добро пожаловать в *DSP Optom*! Выберите действие:',
+    '👋 Добро пожаловать в *DSP MOSKOVSKIY*! Выберите действие:',
     {
       parse_mode: 'Markdown',
       ...Markup.inlineKeyboard([
@@ -35,38 +35,54 @@ bot.start((ctx) => {
 bot.help(ctx=>ctx.reply("Бот для заказов дсп"))
 
 // Каталог
+const catalogItems = [
+  '1️⃣ ДСП "МОСКОВСКИЙ" - 1750*3500*16 мм',
+  '2️⃣ ДСП "МУРОМ" - 1750*3500*16 мм',
+  '3️⃣ ДСП "ПЕРМЬ" - 1700*2745*2,5 мм',
+];
+const catalogText = `📦 Каталог:\n\n` + catalogItems.join('\n') + `\n\nВыберите категорию:`;
 bot.action('catalog', (ctx) => {
   ctx.reply(
-    '📦 Каталог:\n\n1️⃣ ДСП "МОСКОВСКИЙ" — 1750*3500*16 мм\n2️⃣ ДСП "МУРОМ" — 1750*3500*16 мм\n1️⃣ ДСП "ПЕРМЬ" — 1700*2745*2,5 мм\n\nВыберите категорию:',
+    catalogText,
     Markup.inlineKeyboard([
-      [Markup.button.callback("16 мм", "cat_16")],
-      [Markup.button.callback("18 мм", "cat_18")],
+      [Markup.button.callback("МОСКОВСКИЙ", "cat_16")],
+      [Markup.button.callback("МУРОМ", "cat_17")],
+      [Markup.button.callback("ПЕРМЬ", "cat_18")],
       [Markup.button.callback("⬅️ Назад", "back_home")],
     ])
   );
 });
 bot.command("catalog", (ctx) => {
   ctx.reply(
-    "📦 Каталог:\n\n1️⃣ ДСП 16 мм — 250 листов\n2️⃣ ДСП 18 мм — 300 листов\n\nВыберите категорию:",
+    catalogText,
     Markup.inlineKeyboard([
-      [Markup.button.callback("16 мм", "cat_16")],
-      [Markup.button.callback("18 мм", "cat_18")],
+      [Markup.button.callback("МОСКОВСКИЙ", "cat_16")],
+      [Markup.button.callback("МУРОМ", "cat_17")],
+      [Markup.button.callback("ПЕРМЬ", "cat_18")],
       [Markup.button.callback("⬅️ Назад", "back_home")],
     ])
   );
 });
 
 bot.action('cat_16', (ctx) => {
-  ctx.reply("Вы выбрали ДСП 16 мм.", {
-    parse_mode: "Markdown",
+  ctx.reply('Вы выбрали ДСП "МОСКОВСКИЙ" \\- 1750\\*3500\\*16 мм\\.', {
+    parse_mode: "MarkdownV2",
     ...Markup.inlineKeyboard([
       [Markup.button.callback("📝 Сделать заказ", "order")],
     ]),
   });
 });
+  bot.action("cat_17", (ctx) => {
+    ctx.reply('Вы выбрали ДСП "МУРОМ" \\- 1750\\*3500\\*16 мм\\.', {
+      parse_mode: "MarkdownV2",
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback("📝 Сделать заказ", "order")],
+      ]),
+    });
+  });
   bot.action("cat_18", (ctx) => {
-    ctx.reply("Вы выбрали ДСП 18 мм.", {
-      parse_mode: "Markdown",
+    ctx.reply('Вы выбрали ДСП "ПЕРМЬ" \\- 1700\\*2745\\*2,5 мм\\.', {
+      parse_mode: "MarkdownV2",
       ...Markup.inlineKeyboard([
         [Markup.button.callback("📝 Сделать заказ", "order")],
       ]),
@@ -257,8 +273,8 @@ bot.on('text', async (ctx) => {
     user.quantity = ctx.message.text;
     user.step = "category";
     ctx.reply(
-      "Укажите категорию (например: 16 мм или 18 мм):",
-      Markup.keyboard([["16 мм", "18 мм"]])
+      'Укажите категорию (например: "МУРОМ" или "ПЕРМЬ"):',
+      Markup.keyboard([["МОСКОВСКИЙ", "МУРОМ", "ПЕРМЬ"]])
         .oneTime()
         .resize()
     );
