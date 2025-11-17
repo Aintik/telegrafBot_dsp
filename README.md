@@ -1,4 +1,4 @@
 # Telegraf bot
 used:
-NodeJs telegraf 
+NodeJs telegraf mongoDB
 deployed in heroku
