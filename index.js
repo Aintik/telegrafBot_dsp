@@ -221,7 +221,7 @@ bot.command("orders", async (ctx) => {
     const msg =
       `*Заказ:*\n` +
       `👤 ${escapeMarkdown(o.username || "—")}\n` +
-      `ID: ${escapeMarkdown(o.userId)}` +
+      `👤ID: ${escapeMarkdown(o.userId)}\n` +
       `📞 ${escapeMarkdown(o.phone)}\n` +
       `📦 ${escapeMarkdown(o.quantity)} листов \\(${escapeMarkdown(
         o.category
@@ -297,7 +297,7 @@ bot.action("confirm", async (ctx) => {
   const user = orderData[ctx.chat.id];
   const newOrder = new Order({
     username: ctx.from.username,
-    userId: ctx.from.userId,
+    userId: ctx.from.id,
     phone: user.phone,
     quantity: user.quantity,
     category: user.category,
@@ -312,7 +312,7 @@ bot.action("confirm", async (ctx) => {
     `👤 Пользователь: ${escapeMarkdown(
       ctx.from.username || "Без никнейма"
     )}\n` +
-    `Id: ${escapeMarkdown(ctx.from.userId)}\n` +
+    `👤 Id: ${ctx.from.id || "no id"}\n` +
     `📞Телефон: ${escapeMarkdown(user.phone)}\n` +
     `📦Количество: ${escapeMarkdown(user.quantity)} листов\n` +
     `🏷 Категория: ${escapeMarkdown(user.category || "Не выбрана")}\n` +
