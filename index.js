@@ -221,6 +221,7 @@ bot.command("orders", async (ctx) => {
     const msg =
       `*Заказ:*\n` +
       `👤 ${escapeMarkdown(o.username || "—")}\n` +
+      `ID: ${escapeMarkdown(o.userId)}` +
       `📞 ${escapeMarkdown(o.phone)}\n` +
       `📦 ${escapeMarkdown(o.quantity)} листов \\(${escapeMarkdown(
         o.category
@@ -296,6 +297,7 @@ bot.action("confirm", async (ctx) => {
   const user = orderData[ctx.chat.id];
   const newOrder = new Order({
     username: ctx.from.username,
+    userId: ctx.from.userId,
     phone: user.phone,
     quantity: user.quantity,
     category: user.category,
@@ -305,19 +307,12 @@ bot.action("confirm", async (ctx) => {
   delete orderData[ctx.chat.id];
 
   // Оповещение администратору
-  const adminMessage1 = `
-📦 *Новый заказ!*
-👤 Пользователь: @${ctx.from.username || "Без никнейма"}
-📞 Телефон: ${user.phone}
-📦 Количество: ${user.quantity} листов
-🏷 Категория: ${user.category || "Не выбрана"}
-🕒 ${new Date().toLocaleString("ru-RU")}
-  `;
   const adminMessage =
     `📦 *Новый заказ!*\n` +
     `👤 Пользователь: ${escapeMarkdown(
       ctx.from.username || "Без никнейма"
     )}\n` +
+    `Id: ${escapeMarkdown(ctx.from.userId)}\n` +
     `📞Телефон: ${escapeMarkdown(user.phone)}\n` +
     `📦Количество: ${escapeMarkdown(user.quantity)} листов\n` +
     `🏷 Категория: ${escapeMarkdown(user.category || "Не выбрана")}\n` +
