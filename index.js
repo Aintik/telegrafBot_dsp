@@ -38,7 +38,8 @@ bot.help(ctx=>ctx.reply("Бот для заказов дсп"))
 const catalogItems = [
   '1️⃣ ДСП "МОСКОВСКИЙ" - 1750*3500*16 мм',
   '2️⃣ ДСП "МУРОМ" - 1750*3500*16 мм',
-  '3️⃣ ДСП "ПЕРМЬ" - 1700*2745*2,5 мм',
+  '3️⃣ ДВП "ПЕРМЬ" - 1700*2745*2,5 мм',
+  `4️⃣ ОСБ - 1250*2500*9 мм`,
 ];
 const catalogText = `📦 Каталог:\n\n` + catalogItems.join('\n') + `\n\nВыберите категорию:`;
 bot.action('catalog', (ctx) => {
@@ -48,6 +49,7 @@ bot.action('catalog', (ctx) => {
       [Markup.button.callback("МОСКОВСКИЙ", "cat_16")],
       [Markup.button.callback("МУРОМ", "cat_17")],
       [Markup.button.callback("ПЕРМЬ", "cat_18")],
+      [Markup.button.callback("ОСБ", "cat_19")],
       [Markup.button.callback("⬅️ Назад", "back_home")],
     ])
   );
@@ -59,6 +61,7 @@ bot.command("catalog", (ctx) => {
       [Markup.button.callback("МОСКОВСКИЙ", "cat_16")],
       [Markup.button.callback("МУРОМ", "cat_17")],
       [Markup.button.callback("ПЕРМЬ", "cat_18")],
+      [Markup.button.callback("ОСБ", "cat_19")],
       [Markup.button.callback("⬅️ Назад", "back_home")],
     ])
   );
@@ -81,7 +84,15 @@ bot.action('cat_16', (ctx) => {
     });
   });
   bot.action("cat_18", (ctx) => {
-    ctx.reply('Вы выбрали ДСП "ПЕРМЬ" \\- 1700\\*2745\\*2,5 мм\\.', {
+    ctx.reply('Вы выбрали ДВП "ПЕРМЬ" \\- 1700\\*2745\\*2,5 мм\\.', {
+      parse_mode: "MarkdownV2",
+      ...Markup.inlineKeyboard([
+        [Markup.button.callback("📝 Сделать заказ", "order")],
+      ]),
+    });
+  });
+  bot.action("cat_19", (ctx) => {
+    ctx.reply('Вы выбрали ОСБ \\- 1250\\*2500\\*9 мм\\.', {
       parse_mode: "MarkdownV2",
       ...Markup.inlineKeyboard([
         [Markup.button.callback("📝 Сделать заказ", "order")],
@@ -275,7 +286,7 @@ bot.on('text', async (ctx) => {
     user.step = "category";
     ctx.reply(
       'Укажите категорию (например: "МУРОМ" или "ПЕРМЬ"):',
-      Markup.keyboard([["МОСКОВСКИЙ", "МУРОМ", "ПЕРМЬ"]])
+      Markup.keyboard([["МОСКОВСКИЙ", "МУРОМ", "ПЕРМЬ", "ОСБ"]])
         .oneTime()
         .resize()
     );
